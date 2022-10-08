@@ -289,6 +289,20 @@ namespace UELib.Core
             }
         }
 
+        private bool IsDistribution()
+        {
+            String name = Class.Name;
+            if (name.Equals("DistributionFloatConstant")) return true;
+            if (name.Equals("DistributionFloatConstantCurve")) return true;
+            if (name.Equals("DistributionFloatParticleParameter")) return true;
+            if (name.Equals("DistributionFloatUniform")) return true;
+            if (name.Equals("DistributionVectorConstant")) return true;
+            if (name.Equals("DistributionVectorConstantCurve")) return true;
+            if (name.Equals("DistributionVectorParticleParameter")) return true;
+            if (name.Equals("DistributionVectorUniform")) return true;
+            return false;
+        }
+
         /// <summary>
         /// Tries to read all properties that resides in this object instance.
         /// </summary>
@@ -296,6 +310,10 @@ namespace UELib.Core
         {
             Default = this;
             Properties = new DefaultPropertiesCollection();
+            if (IsDistribution())
+            {
+                Buffer.Position += 4;
+            }
             while (true)
             {
                 var tag = new UDefaultProperty(Default);
