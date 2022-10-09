@@ -289,7 +289,7 @@ namespace UELib.Core
             }
         }
 
-        private bool IsDistribution()
+        private bool ClassRequiresShift()
         {
             String name = Class.Name;
             if (name.Equals("DistributionFloatConstant")) return true;
@@ -300,6 +300,8 @@ namespace UELib.Core
             if (name.Equals("DistributionVectorConstantCurve")) return true;
             if (name.Equals("DistributionVectorParticleParameter")) return true;
             if (name.Equals("DistributionVectorUniform")) return true;
+            if (name.Equals("DynamicLightEnvironmentComponent")) return true;
+            if (name.Equals("StaticMeshComponent")) return true;
             return false;
         }
 
@@ -310,7 +312,7 @@ namespace UELib.Core
         {
             Default = this;
             Properties = new DefaultPropertiesCollection();
-            if (IsDistribution())
+            if (ClassRequiresShift())
             {
                 Buffer.Position += 4;
             }
