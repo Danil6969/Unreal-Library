@@ -702,6 +702,14 @@ namespace UELib.Core
                         break;
                     }
 
+                    case PropertyType.ActorReference:
+                    {
+                        string actor = DeserializeDefaultPropertyValue(PropertyType.ObjectProperty, ref deserializeFlags);
+                        string guid = DeserializeDefaultPropertyValue(PropertyType.Guid, ref deserializeFlags);
+                        propertyValue += $"Actor={actor},Guid={guid}";
+                        break;
+                    }
+
                     #endregion
 
                     case PropertyType.PointerProperty:
