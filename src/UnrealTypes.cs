@@ -53,5 +53,6 @@
         TwoVectors			= (16 + StructOffset),
         //InterpCurve		= (17 + PropertyType.StructOffset)
         //InterpCurvePoint	= (18 + PropertyType.StructOffset)
+        ActorReference      = (19 + StructOffset),
     }
 }
