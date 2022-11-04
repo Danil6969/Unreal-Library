@@ -743,8 +743,9 @@ namespace UELib.Core
                 // componentClassIndex
                 _Buffer.Position += sizeof(int);
                 int componentNameIndex = _Buffer.ReadNameIndex();
-                if (componentNameIndex == (int)Table.ObjectName)
+                if (componentNameIndex == (int)Table.ObjectName && !HasInvalidNetIndex(1)) // Only classes without invalid netIndex can have componentNameIndex
                 {
+                    Record(nameof(componentNameIndex), componentNameIndex);
                     base.Deserialize();
                     return;
                 }
