@@ -407,12 +407,15 @@ namespace UELib.Core
                 {
                     case PropertyType.BoolProperty:
                     {
-                        Debug.Assert(BoolValue != null, nameof(BoolValue) + " != null");
-                        bool value = BoolValue.Value;
-                        if (Size == 1 && _Buffer.Version < V3)
+                        bool value;
+                        if (Size == 1 && _Buffer.Version < V3 || BoolValue == null)
                         {
                             value = _Buffer.ReadByte() > 0;
                             Record(nameof(value), value);
+                        }
+                        else
+                        {
+                            value = BoolValue.Value;
                         }
 
                         propertyValue = value ? "true" : "false";
