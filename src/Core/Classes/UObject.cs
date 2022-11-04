@@ -219,6 +219,32 @@ namespace UELib.Core
             }
         }
 #endif
+        protected bool HasInvalidNetIndex(int netIndex)
+        {
+            if (this is UClass) return netIndex == 0;
+            string name = Class.Name;
+
+            // These may have 0 netIndex
+            if (name.Equals("ByteProperty")) return false;
+            if (name.Equals("DecalMaterial")) return false;
+            if (name.Equals("DOFAndBloomEffect")) return false;
+            if (name.Equals("Material")) return false;
+            if (name.Equals("MaterialInstanceConstant")) return false;
+            if (name.Equals("ObjectRedirector")) return false;
+            if (name.Equals("Package")) return false;
+            if (name.Equals("SoundNodeWave")) return false;
+            if (name.Equals("Texture2D")) return false;
+
+            // These always have invalid netIndex
+            if (name.Equals("DistributionFloatConstant")) return true;
+            if (name.Equals("DistributionFloatUniform")) return true;
+            if (name.Equals("DistributionVectorConstant")) return true;
+            if (name.Equals("DistributionVectorUniform")) return true;
+
+            // By default 0 netIndex is invalid
+            return netIndex == 0;
+        }
+
         /// <summary>
         /// Deserialize this object's structure from the _Buffer stream.
         /// </summary>
@@ -252,9 +278,10 @@ namespace UELib.Core
                )
             {
                 int netIndex = _Buffer.ReadInt32();
-                if (netIndex == 0) // Sometimes we get netIndex equal to 0 which should be considered invalid
+                if (HasInvalidNetIndex(netIndex)) // Sometimes we get netIndex equal to 0 which should be considered invalid
                 {
-                    Record("fakeNetIndex", netIndex); // This will be fakeNetIndex
+                    int fakeNetIndex = netIndex;
+                    Record(nameof(fakeNetIndex), fakeNetIndex); // This will be fakeNetIndex
                     netIndex = _Buffer.ReadInt32(); // Must read next one instead
                 }
                 Record(nameof(netIndex), netIndex);
