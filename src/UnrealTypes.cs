@@ -52,8 +52,8 @@
         TwoVectors			= (16 + StructOffset),
         //InterpCurve		= (17 + PropertyType.StructOffset)
         //InterpCurvePoint	= (18 + PropertyType.StructOffset)
-        ActorReference      = (19 + StructOffset),
         PointRegion         = (19 + StructOffset),
+        ActorReference      = (20 + StructOffset),
 
         // Auto-conversions for old (<= 61) "StructName"s
         Rotation = Rotator,
