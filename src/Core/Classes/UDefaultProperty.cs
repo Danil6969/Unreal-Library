@@ -916,14 +916,6 @@ namespace UELib.Core
                     break;
                 }
 
-                case PropertyType.ActorReference:
-                {
-                    string actor = DeserializeDefaultPropertyValue(PropertyType.ObjectProperty, ref deserializeFlags);
-                    string guid = DeserializeDefaultPropertyValue(PropertyType.Guid, ref deserializeFlags);
-                    propertyValue += $"Actor={actor},Guid={guid}";
-                    break;
-                }
-
                 case PropertyType.PointRegion:
                 {
                     string zone = DeserializeDefaultPropertyValue(PropertyType.ObjectProperty, ref deserializeFlags);
@@ -931,6 +923,14 @@ namespace UELib.Core
                     string zoneNumber =
                         DeserializeDefaultPropertyValue(PropertyType.ByteProperty, ref deserializeFlags);
                     propertyValue += $"Zone={zone},iLeaf={iLeaf},ZoneNumber={zoneNumber}";
+                    break;
+                }
+
+                case PropertyType.ActorReference:
+                {
+                    string actor = DeserializeDefaultPropertyValue(PropertyType.ObjectProperty, ref deserializeFlags);
+                    string guid = DeserializeDefaultPropertyValue(PropertyType.Guid, ref deserializeFlags);
+                    propertyValue += $"Actor={actor},Guid={guid}";
                     break;
                 }
 
