@@ -340,23 +340,25 @@ namespace UELib.Core
             {
                 _Buffer.ReadClass(out StateFrame);
             }
+            _Buffer.StartPeek();
+            bool hasFakeIndex = HasInvalidNetIndex(_Buffer.ReadInt32());
+            _Buffer.EndPeek();
+            if (hasFakeIndex) // Sometimes we get netIndex equal to 0 which should be considered invalid
+            {
+                int fakeIndex = _Buffer.ReadInt32();
+                Record(nameof(fakeIndex), fakeIndex); // This will be fakeIndex
+            }
 #if MKKE || BATMAN
             if (Package.Build == UnrealPackage.GameBuild.BuildName.MKKE ||
                 Package.Build == UnrealPackage.GameBuild.BuildName.Batman4)
             {
                 int netIndex = _Buffer.ReadInt32();
-                if (HasInvalidNetIndex(netIndex)) // Sometimes we get netIndex equal to 0 which should be considered invalid
-                {
-                    int fakeNetIndex = netIndex;
-                    Record(nameof(fakeNetIndex), fakeNetIndex); // This will be fakeNetIndex
-                    netIndex = _Buffer.ReadInt32(); // Must read next one instead
-                }
                 Record(nameof(netIndex), netIndex);
                 goto skipNetIndex;
             }
 #endif
             // No version check found in the GoW PC client
-            if (_Buffer.Version >= (uint)PackageObjectLegacyVersion.TemplateDataAddedToUComponent)
+            if (!hasFakeIndex && _Buffer.Version >= (uint)PackageObjectLegacyVersion.TemplateDataAddedToUComponent)
             {
                 switch (this)
                 {
