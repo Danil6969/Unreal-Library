@@ -1,6 +1,7 @@
 ﻿#if DECOMPILE
 using System;
 using System.Linq;
+using UELib.Flags;
 
 namespace UELib.Core
 {
@@ -9,27 +10,22 @@ namespace UELib.Core
         /// <summary>
         /// Decompiles this object into a text format of:
         ///
-        /// [FLAGS] function NAME([VARIABLES]) [const]
+        /// [FLAGS] function NAME([VARIABLES])[;] [const]
         /// {
         ///     [LOCALS]
         ///
         ///     [CODE]
-        /// }
+        /// } [META DATA]
         /// </summary>
         /// <returns></returns>
         public override string Decompile()
         {
-            string code;
-            try
-            {
-                code = FormatCode();
-            }
-            catch (Exception e)
-            {
-                code = e.Message;
-            }
-
-            return FormatHeader() + (string.IsNullOrEmpty(code) ? ";" : code);
+            string code = FormatCode();
+            var body = $"{FormatHeader()}{code}{DecompileMeta()}";
+            // Write a declaration only if code is empty.
+            return string.IsNullOrEmpty(code)
+                ? $"{body};"
+                : body;
         }
 
         private string FormatFlags()
@@ -88,7 +84,7 @@ namespace UELib.Core
                 output += "final ";
             }
 #if VENGEANCE
-            if (Package.Build.Generation == BuildGeneration.Vengeance)
+            if (Package.Build == BuildGeneration.Vengeance)
             {
                 if (HasFunctionFlag(Flags.FunctionFlags.VG_Overloaded))
                 {
@@ -103,22 +99,78 @@ namespace UELib.Core
             {
                 output += "noexport ";
             }
-
-            if (HasFunctionFlag(Flags.FunctionFlags.K2Call))
+            
+#if AHIT
+            if (Package.Build == UnrealPackage.GameBuild.BuildName.AHIT)
             {
-                output += "k2call ";
-            }
+                if (HasFunctionFlag(Flags.FunctionFlags.AHIT_Optional))
+                {
+                    output += "optional ";  // optional interface functions use this.
+                }
 
-            if (HasFunctionFlag(Flags.FunctionFlags.K2Override))
+                if (HasFunctionFlag(Flags.FunctionFlags.AHIT_Multicast))
+                {
+                    output += "multicast ";
+                }
+
+                if (HasFunctionFlag(Flags.FunctionFlags.AHIT_NoOwnerRepl))
+                {
+                    output += "NoOwnerReplication ";
+                }
+            }
+#endif
+
+            // FIXME: Version, added with one of the later UDK builds.
+            if (Package.Version >= 500
+#if AHIT
+                // For AHIT, don't write these K2 specifiers, since they overlap with its custom flags.
+                && Package.Build != UnrealPackage.GameBuild.BuildName.AHIT
+#endif
+               )
             {
-                output += "k2override ";
-            }
+                if (HasFunctionFlag(Flags.FunctionFlags.K2Call))
+                {
+                    output += "k2call ";
+                }
 
-            if (HasFunctionFlag(Flags.FunctionFlags.K2Pure))
+                if (HasFunctionFlag(Flags.FunctionFlags.K2Override))
+                {
+                    output += "k2override ";
+                }
+
+                if (HasFunctionFlag(Flags.FunctionFlags.K2Pure))
+                {
+                    output += "k2pure ";
+                }
+            }
+#if DNF
+            if (Package.Build == UnrealPackage.GameBuild.BuildName.DNF)
             {
-                output += "k2pure ";
-            }
+                // 0x20000200 unknown specifier
+                
+                if (HasFunctionFlag(0x4000000))
+                {
+                    output += "animevent ";
+                }
+                
+                if (HasFunctionFlag(0x1000000))
+                {
+                    output += "cached ";
+                }
 
+                if (HasFunctionFlag(0x2000000))
+                {
+                    output += "encrypted ";
+                }
+
+                // Only if non-static?
+                if (HasFunctionFlag(0x800000))
+                {
+                    // Along with an implicit "native"
+                    output += "indexed ";
+                }
+            }
+#endif
             if (HasFunctionFlag(Flags.FunctionFlags.Invariant))
             {
                 output += "invariant ";
@@ -185,10 +237,18 @@ namespace UELib.Core
                 output += "function ";
             }
 
+#if AHIT
+            // Needs to be after function/event/operator/etc.
+            if (Package.Build == UnrealPackage.GameBuild.BuildName.AHIT && HasFunctionFlag(Flags.FunctionFlags.AHIT_EditorOnly))
+            {
+                output += "editoronly ";
+            }
+#endif
+
             return output;
         }
 
-        protected override string FormatHeader()
+        public override string FormatHeader()
         {
             var output = string.Empty;
             // static function (string?:) Name(Parms)...
@@ -198,17 +258,13 @@ namespace UELib.Core
                 output = $"// Export U{Outer.Name}::exec{Name}(FFrame&, void* const)\r\n{UDecompilingState.Tabs}";
             }
 
-            string metaData = DecompileMeta();
-            if (metaData != string.Empty)
-            {
-                output = metaData + "\r\n" + output;
-            }
+            string comment = FormatTooltipMetaData();
+            string returnCode = ReturnProperty != null
+                ? ReturnProperty.GetFriendlyType() + " "
+                : string.Empty;
 
-            output += FormatFlags()
-                      + (ReturnProperty != null
-                          ? ReturnProperty.GetFriendlyType() + " "
-                          : string.Empty)
-                      + FriendlyName + FormatParms();
+            output += comment +
+                      FormatFlags() + returnCode + FriendlyName + FormatParms();
             if (HasFunctionFlag(Flags.FunctionFlags.Const))
             {
                 output += " const";
@@ -219,14 +275,41 @@ namespace UELib.Core
 
         private string FormatParms()
         {
-            var output = string.Empty;
-            if (Params != null && Params.Any())
+            if (Params == null || !Params.Any())
+                return "()";
+
+            bool hasOptionalData = HasOptionalParamData();
+            if (hasOptionalData)
             {
-                var parameters = Params.Where((p) => p != ReturnProperty);
-                foreach (var parm in parameters)
+                // Ensure a sound ByteCodeManager
+                ByteCodeManager.Deserialize();
+                ByteCodeManager.JumpTo(0);
+                ByteCodeManager.CurrentTokenIndex = -1;
+            }
+
+            var output = string.Empty;
+            var parameters = Params.Where(parm => parm != ReturnProperty).ToList();
+            foreach (var parm in parameters)
+            {
+                string parmCode = parm.Decompile();
+                if (hasOptionalData && parm.HasPropertyFlag(PropertyFlagsLO.OptionalParm))
                 {
-                    output += parm.Decompile() + (parm != parameters.Last() ? ", " : string.Empty);
+                    // Look for an assignment.
+                    var defaultToken = ByteCodeManager.NextToken;
+                    if (defaultToken is UByteCodeDecompiler.DefaultParameterToken)
+                    {
+                        string defaultExpr = defaultToken.Decompile();
+                        parmCode += $" = {defaultExpr}";
+                    }
                 }
+
+                if (parm != parameters.Last())
+                {
+                    output += $"{parmCode}, ";
+                    continue;
+                }
+
+                output += parmCode;
             }
 
             return $"({output})";
@@ -248,7 +331,8 @@ namespace UELib.Core
             }
             catch (Exception e)
             {
-                code = e.Message;
+                Console.Error.WriteLine($"Exception thrown: {e} in {nameof(FormatCode)}");
+                code = $"/*ERROR: {e}*/";
             }
             finally
             {

@@ -8,6 +8,8 @@ namespace UELib.Core
     [SuppressMessage("ReSharper", "MemberCanBePrivate.Global")]
     public class UStateFrame : IUnrealSerializableClass
     {
+        // FIXME: Version, added somewhere between 186 ... 230
+        private const int VStateStack = 187;
         private const int VLatentActionReduced = 566;
 
         public UStruct Node;
@@ -28,7 +30,12 @@ namespace UELib.Core
             LatentAction = stream.Version < VLatentActionReduced
                 ? stream.ReadUInt32()
                 : stream.ReadUInt16();
-            stream.ReadArray(out StateStack);
+            if (stream.Package.Build == UnrealPackage.GameBuild.BuildName.DNF &&
+                stream.LicenseeVersion >= 25)
+            {
+                uint dnfUInt32 = stream.ReadUInt32();
+            }
+            if (stream.Version >= VStateStack) stream.ReadArray(out StateStack);
             if (Node != null) Offset = stream.ReadIndex();
         }
 
@@ -44,7 +51,7 @@ namespace UELib.Core
                 ? LatentAction
                 : (ushort)LatentAction
             );
-            stream.Write(ref StateStack);
+            if (stream.Version >= VStateStack) stream.Write(ref StateStack);
             if (Node != null) stream.Write(Offset);
         }
 

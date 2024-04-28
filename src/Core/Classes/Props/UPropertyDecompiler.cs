@@ -11,28 +11,7 @@ namespace UELib.Core
         // Called before the var () is printed.
         public virtual string PreDecompile()
         {
-            string tooltipValue = null;
-            MetaData?.Tags.TryGetValue("ToolTip", out tooltipValue);
-            if (tooltipValue == null)
-            {
-                return string.Empty;
-            }
-
-            var comment = $"{UDecompilingState.Tabs}/** ";
-            // Multiline comment?
-            if (tooltipValue.IndexOf('\n') != -1)
-            {
-                comment +=
-                    " \r\n" +
-                    $"{UDecompilingState.Tabs} *{tooltipValue.Replace("\n", "\n" + UDecompilingState.Tabs + " *")}" +
-                    $"\r\n{UDecompilingState.Tabs}";
-            }
-            else
-            {
-                comment += tooltipValue;
-            }
-
-            return $"{comment} */\r\n";
+            return FormatTooltipMetaData();
         }
 
         public override string Decompile()
@@ -43,7 +22,13 @@ namespace UELib.Core
                                  + DecompileEditorData()
                                  + DecompileMeta();
         }
-
+        
+        // Post semicolon ";".
+        public virtual string PostDecompile()
+        {
+            return default;
+        }
+        
         // FIXME: Rewrite without performing this many string copies, however this part of the decompilation process is not crucial.
         private string DecompileEditorData()
         {
@@ -317,6 +302,22 @@ namespace UELib.Core
                         output += "serializetext ";
                         copyFlags &= ~(ulong)Flags.PropertyFlagsLO.SerializeText;
                     }
+
+#if AHIT
+                    if (Package.Build == UnrealPackage.GameBuild.BuildName.AHIT)
+                    {
+                        if (HasPropertyFlag(Flags.PropertyFlagsHO.AHIT_Serialize))
+                        {
+                            output += "serialize ";
+                            copyFlags &= ~(ulong)Flags.PropertyFlagsHO.AHIT_Serialize << 32;
+                        }
+                        if (HasPropertyFlag(Flags.PropertyFlagsLO.AHIT_Bitwise))
+                        {
+                            output += "bitwise ";
+                            copyFlags &= ~(ulong)Flags.PropertyFlagsLO.AHIT_Bitwise;
+                        }
+                    }
+#endif
                 }
 
                 if ((PropertyFlags & (ulong)Flags.PropertyFlagsLO.Native) != 0)
@@ -408,7 +409,11 @@ namespace UELib.Core
                     }
                 }
 
-                if ((PropertyFlags & (ulong)Flags.PropertyFlagsLO.EdFindable) != 0)
+                if ((PropertyFlags & (ulong)Flags.PropertyFlagsLO.EdFindable) != 0
+#if AHIT
+                    && Package.Build != UnrealPackage.GameBuild.BuildName.AHIT
+#endif
+                   )
                 {
                     copyFlags &= ~(ulong)Flags.PropertyFlagsLO.EdFindable;
                     output += "edfindable ";
@@ -477,6 +482,40 @@ namespace UELib.Core
                     output += "input ";
                     copyFlags &= ~(ulong)Flags.PropertyFlagsLO.Input;
                 }
+#if DNF
+                if (Package.Build == UnrealPackage.GameBuild.BuildName.DNF)
+                {
+                    if (HasPropertyFlag(0x1000000))
+                    {
+                        output += "nontrans ";
+                        copyFlags &= ~(uint)0x1000000;
+
+                    }
+                    if (HasPropertyFlag(0x8000000))
+                    {
+                        output += "nocompress ";
+                        copyFlags &= ~(uint)0x8000000;
+                    }
+                    
+                    if (HasPropertyFlag(0x2000000))
+                    {
+                        output += $"netupdate({RepNotifyFuncName}) ";
+                        copyFlags &= ~(uint)0x2000000;
+                    }
+
+                    if (HasPropertyFlag(0x4000000))
+                    {
+                        output += "state ";
+                        copyFlags &= ~(uint)0x4000000;
+                    }
+                    
+                    if (HasPropertyFlag(0x100000))
+                    {
+                        output += "anim ";
+                        copyFlags &= ~(uint)0x100000;
+                    }
+                }
+#endif
             }
 
             // Local's may never output any of their implied flags!
