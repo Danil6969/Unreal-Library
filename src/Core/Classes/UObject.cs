@@ -256,6 +256,7 @@ namespace UELib.Core
             if (name.Equals("ObjectRedirector")) return false;
             if (name.Equals("Package")) return false;
             if (name.Equals("SoundNodeWave")) return false;
+            if (name.Equals("StaticMeshComponent")) return false;
             if (name.Equals("Texture2D")) return false;
 
             // These always have invalid netIndex
