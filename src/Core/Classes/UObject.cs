@@ -245,25 +245,29 @@ namespace UELib.Core
         protected bool HasInvalidNetIndex(int netIndex)
         {
             if (this is UClass) return netIndex == 0;
-            string name = Class.Name;
 
-            // These may have 0 netIndex
-            if (name.Equals("ByteProperty")) return false;
-            if (name.Equals("DecalMaterial")) return false;
-            if (name.Equals("DOFAndBloomEffect")) return false;
-            if (name.Equals("Material")) return false;
-            if (name.Equals("MaterialInstanceConstant")) return false;
-            if (name.Equals("ObjectRedirector")) return false;
-            if (name.Equals("Package")) return false;
-            if (name.Equals("SoundNodeWave")) return false;
-            if (name.Equals("StaticMeshComponent")) return false;
-            if (name.Equals("Texture2D")) return false;
-
-            // These always have invalid netIndex
-            if (name.Equals("DistributionFloatConstant")) return true;
-            if (name.Equals("DistributionFloatUniform")) return true;
-            if (name.Equals("DistributionVectorConstant")) return true;
-            if (name.Equals("DistributionVectorUniform")) return true;
+            switch (Class.Name)
+            {
+                // These may have 0 netIndex
+                case "ByteProperty":
+                case "CylinderComponent":
+                case "DecalMaterial":
+                case "DOFAndBloomEffect":
+                case "Material":
+                case "MaterialInstanceConstant":
+                case "ObjectRedirector":
+                case "Package":
+                case "SoundNodeWave":
+                case "StaticMeshComponent":
+                case "Texture2D":
+                    return false;
+                // These always have invalid netIndex
+                case "DistributionFloatConstant":
+                case "DistributionFloatUniform":
+                case "DistributionVectorConstant":
+                case "DistributionVectorUniform":
+                    return true;
+            }
 
             // By default 0 netIndex is invalid
             return netIndex == 0;
