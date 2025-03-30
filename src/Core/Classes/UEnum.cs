@@ -24,10 +24,13 @@ namespace UELib.Core
             base.Deserialize();
 
             int count = _Buffer.ReadLength();
+            Record(nameof(count), count);
             Names = new List<UName>(count);
             for (var i = 0; i < count; ++i)
             {
-                Names.Add(_Buffer.ReadNameReference());
+                UName enumField = _Buffer.ReadNameReference();
+                Names.Add(enumField);
+                Record(nameof(enumField), enumField);
             }
 #if SPELLBORN
             if (_Buffer.Package.Build == UnrealPackage.GameBuild.BuildName.Spellborn
