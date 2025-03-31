@@ -249,6 +249,10 @@ namespace UELib.Core
             switch (Class.Name)
             {
                 // These may have 0 netIndex
+                case "ArrowComponent":
+                case "AudioComponent":
+                case "BlockingVolume":
+                case "BrushComponent":
                 case "ByteProperty":
                 case "CylinderComponent":
                 case "DecalMaterial":
@@ -273,7 +277,7 @@ namespace UELib.Core
             return netIndex == 0;
         }
 
-        private void DeserializeNetIndex()
+        protected void DeserializeNetIndex()
         {
 #if MKKE || BATMAN
             if (Package.Build == UnrealPackage.GameBuild.BuildName.MKKE ||
