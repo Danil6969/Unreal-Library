@@ -43,5 +43,10 @@ namespace UELib.Core
         {
             return ((Vector2)this).GetHashCode();
         }
+
+        public override string ToString()
+        {
+            return $"vect({X:F},{Y:F})";
+        }
     }
 }
