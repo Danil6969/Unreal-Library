@@ -50,5 +50,10 @@ namespace UELib.Core
                 stream.Write(W);
             }
         }
+
+        public override string ToString()
+        {
+            return $"vect({X:F},{Y:F},{Z:F},{W:F})";
+        }
     }
 }
