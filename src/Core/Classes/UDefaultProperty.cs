@@ -1096,12 +1096,26 @@ namespace UELib.Core
                     }
                     else
                     {
+                        List<string> extracted = new List<string>();
                         for (var i = 0; i < arraySize; ++i)
                         {
                             string elementValue = DeserializeDefaultPropertyValue(arrayType, ref deserializeFlags);
                             if ((_TempFlags & ReplaceNameMarker) != 0)
                             {
-                                propertyValue += elementValue.Replace("%ARRAYNAME%", $"{Name}({i})");
+                                int index1 = elementValue.IndexOf("%ARRAYNAME%");
+                                int index2 = elementValue.IndexOf("%ARRAYNAME%", index1+1);
+                                int index3 = elementValue.LastIndexOf("\r\n");
+                                if (index2 == -1)
+                                {
+                                    string string1 = elementValue.Substring(0,index3);
+                                    string string2 = elementValue.Substring(index1);
+                                    propertyValue += string1;
+                                    extracted.Add(string2.Replace("%ARRAYNAME%", $"{Name}({i})"));
+                                }
+                                else
+                                {
+                                    propertyValue += elementValue.Replace("%ARRAYNAME%", $"{Name}({i})");
+                                }
                                 _TempFlags = 0x00;
                             }
                             else
@@ -1110,6 +1124,20 @@ namespace UELib.Core
                             }
 
                             if (i != arraySize - 1)
+                            {
+                                propertyValue += "\r\n" + UDecompilingState.Tabs;
+                            }
+                        }
+
+                        int count = extracted.Count;
+                        for (var i = 0; i < count; ++i)
+                        {
+                            if (i == 0)
+                            {
+                                propertyValue += "\r\n" + UDecompilingState.Tabs;
+                            }
+                            propertyValue += extracted[i];
+                            if (i < count - 1)
                             {
                                 propertyValue += "\r\n" + UDecompilingState.Tabs;
                             }
