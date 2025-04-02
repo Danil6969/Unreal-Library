@@ -54,6 +54,7 @@
         //InterpCurvePoint	= (18 + PropertyType.StructOffset)
         PointRegion         = (19 + StructOffset),
         ActorReference      = (20 + StructOffset),
+        Poly                = (21 + StructOffset),
 
         // Auto-conversions for old (<= 61) "StructName"s
         Rotation = Rotator,
