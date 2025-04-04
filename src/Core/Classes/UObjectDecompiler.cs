@@ -20,7 +20,7 @@ namespace UELib.Core
             }
 
             Debug.Assert(Class != null);
-            string output = $"begin object name={Name} class={Class.Name}" +
+            string output = $"Begin Object Name={Name} Class={Class.Name}" +
                             "\r\n";
             UDecompilingState.AddTabs(1);
             try
@@ -32,7 +32,7 @@ namespace UELib.Core
                 UDecompilingState.RemoveTabs(1);
             }
 
-            return $"{output}{UDecompilingState.Tabs}object end" +
+            return $"{output}{UDecompilingState.Tabs}Object End" +
                    $"\r\n{UDecompilingState.Tabs}" +
                    $"// Reference: {Class.Name}'{GetOuterGroup()}'";
         }
