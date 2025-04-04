@@ -6,7 +6,8 @@ using System.Linq;
 using System.Runtime.InteropServices;
 using UELib.Annotations;
 using UELib.Branch;
-using UELib.Types;
+ using UELib.Engine;
+ using UELib.Types;
 using UELib.UnrealScript;
 
 namespace UELib.Core
@@ -71,6 +72,12 @@ namespace UELib.Core
             // Array or Inlined object
             if ((_TempFlags & DoNotAppendName) != 0)
                 // The tag handles the name etc on its own.
+            {
+                return value;
+            }
+
+            // Anonymous object
+            if (Name == null)
             {
                 return value;
             }
@@ -566,6 +573,48 @@ namespace UELib.Core
         private void AssertFastSerialize(IUnrealArchive archive)
         {
             Debug.Assert(archive.Version >= (uint)PackageObjectLegacyVersion.FastSerializeStructs);
+        }
+
+        private string FloatToString(float f, int precision)
+        {
+            string s = $"{f:F}";
+            switch (precision)
+            {
+                case 0:
+                    s = $"{f:00000}.000000";
+                    break;
+                case 1:
+                    s = $"{f:00000.0}00000";
+                    break;
+                case 2:
+                    s = $"{f:00000.00}0000";
+                    break;
+                case 3:
+                    s = $"{f:00000.000}000";
+                    break;
+                case 4:
+                    s = $"{f:00000.0000}00";
+                    break;
+                case 5:
+                    s = $"{f:00000.00000}0";
+                    break;
+                case 6:
+                    s = $"{f:00000.000000}";
+                    break;
+            }
+            if (s.ElementAt(0) != '-')
+            {
+                s = $"+{s}";
+            }
+            return s;
+        }
+
+        private string VectorToString(UVector v, int precision)
+        {
+            string x = FloatToString(v.X, precision);
+            string y = FloatToString(v.Y, precision);
+            string z = FloatToString(v.Z, precision);
+            return $"{x},{y},{z}";
         }
 
         /// <summary>
@@ -1204,6 +1253,30 @@ namespace UELib.Core
                 {
                     int offset = _Buffer.ReadInt32();
                     propertyValue = PropertyDisplay.FormatLiteral(offset);
+                    break;
+                }
+
+                case PropertyType.Poly:
+                {
+                    _Buffer.ReadClass(out Poly poly);
+                    propertyValue += "Begin Polygon Item=Base Flags=3584";
+                    propertyValue += "\r\n" + UDecompilingState.Tabs + UDecompilingState.Tabs;
+                    propertyValue += $"Origin   {VectorToString(poly.Base, 6)}";
+                    propertyValue += "\r\n" + UDecompilingState.Tabs + UDecompilingState.Tabs;
+                    propertyValue += $"Normal   {VectorToString(poly.Normal, 3)}";
+                    propertyValue += "\r\n" + UDecompilingState.Tabs + UDecompilingState.Tabs;
+                    propertyValue += $"TextureU {VectorToString(poly.TextureU, 3)}";
+                    propertyValue += "\r\n" + UDecompilingState.Tabs + UDecompilingState.Tabs;
+                    propertyValue += $"TextureV {VectorToString(poly.TextureV, 3)}";
+                    propertyValue += "\r\n" + UDecompilingState.Tabs;
+                    for (int i = 0; i < poly.Vertex.Count; ++i)
+                    {
+                        UVector vertex = poly.Vertex[i];
+                        propertyValue += UDecompilingState.Tabs;
+                        propertyValue += $"Vertex   {VectorToString(vertex, 6)}";
+                        propertyValue += "\r\n" + UDecompilingState.Tabs;
+                    }
+                    propertyValue += "End Polygon";
                     break;
                 }
 
