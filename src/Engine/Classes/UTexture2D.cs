@@ -52,8 +52,15 @@ namespace UELib.Engine
                 Record(nameof(Format), Format);
             }
 
-            _Buffer.ReadArray(out Mips);
-            Record(nameof(Mips), Mips);
+            int count = _Buffer.ReadInt32();
+            Record(nameof(count), count);
+            Mips = new UArray<MipMap2D>();
+            for (int i = 0; i < count; ++i)
+            {
+                _Buffer.ReadStruct(out MipMap2D mipMap);
+                Record(nameof(mipMap), mipMap);
+                Mips.Add(mipMap);
+            }
 
             if (_Buffer.Version >= (uint)PackageObjectLegacyVersion.AddedTextureFileCacheGuidToTexture2D)
             {
