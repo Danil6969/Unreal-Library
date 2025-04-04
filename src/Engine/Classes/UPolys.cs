@@ -3,6 +3,7 @@ using UELib.Branch;
 using UELib.Core;
 using UELib.Flags;
 using UELib.ObjectModel.Annotations;
+using UELib.Types;
 
 namespace UELib.Engine
 {
@@ -25,19 +26,12 @@ namespace UELib.Engine
 
         protected override void Deserialize()
         {
-            base.Deserialize();
+            Properties = new DefaultPropertiesCollection();
+            DeserializeNetIndex();
 
-            // Faster serialization for cooked packages, no don't have to check for the package's version here.
-            if (Package.Summary.PackageFlags.HasFlag(PackageFlag.Cooked))
-            {
-                ElementOwner = _Buffer.ReadObject();
-                Record(nameof(ElementOwner), ElementOwner);
+            long long1 = _Buffer.ReadInt64();
+            Record(nameof(long1), long1);
 
-                _Buffer.ReadArray(out Element);
-                Record(nameof(Element), Element);
-                return;
-            }
-            
             int num, max;
 
             num = _Buffer.ReadInt32();
@@ -52,10 +46,16 @@ namespace UELib.Engine
             }
 
             Element = new UArray<Poly>(num);
-            if (num > 0)
+            for (int i = 0; i < num; ++i)
             {
-                _Buffer.ReadArray(out Element, num);
-                Record(nameof(Element), Element);
+                UDefaultProperty property = new UDefaultProperty(this);
+                property.Type = PropertyType.Poly;
+                //property.Name = new UName($"Polygon[{i:D}]");
+                property._PropertyValuePosition = _Buffer.Position;
+                Properties.Add(property);
+                _Buffer.ReadClass(out Poly poly);
+                Record(nameof(poly), poly);
+                Element.Add(poly);
             }
         }
     }
