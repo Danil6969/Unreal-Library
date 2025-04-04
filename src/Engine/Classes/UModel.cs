@@ -1,5 +1,6 @@
 using UELib.Engine;
 using UELib.ObjectModel.Annotations;
+using UELib.Types;
 
 namespace UELib.Core
 {
@@ -36,6 +37,7 @@ namespace UELib.Core
 
         protected override void Deserialize()
         {
+            Properties = new DefaultPropertiesCollection();
             DeserializeNetIndex();
 
             Long1 = _Buffer.ReadInt64();
@@ -65,6 +67,11 @@ namespace UELib.Core
             Long6 = _Buffer.ReadInt64();
             Record(nameof(Long6), Long6);
 
+            var property = new UDefaultProperty(this);
+            property.Type = PropertyType.ObjectProperty;
+            property.Name = new UName($"Polys");
+            property._PropertyValuePosition = _Buffer.Position;
+            Properties.Add(property);
             Object2 = _Buffer.ReadObject();
             Record(nameof(Object2), Object2);
         }
