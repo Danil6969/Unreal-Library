@@ -753,7 +753,9 @@ namespace UELib.Core
                                 if ((deserializeFlags & DeserializeFlags.WithinArray) != 0)
                                 {
                                     _TempFlags |= ReplaceNameMarker;
-                                    propertyValue += $"%ARRAYNAME%={constantObject.Name}";
+                                    propertyValue += "%ARRAYNAME%=";
+                                    propertyValue += $"{constantObject.Class.Name}'";
+                                    propertyValue += $"{constantObject.Name}'";
                                 }
                                 else
                                 {
